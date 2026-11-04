@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="luma_background">#F8F8FC</color>
+    <color name="luma_lavender">#EEEDF5</color>
+    <color name="luma_accent">#4D6FA1</color>
+    <color name="luma_text">#303746</color>
+    <color name="luma_muted">#8991A0</color>
+</resources>

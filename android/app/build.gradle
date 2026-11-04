@@ -1,0 +1,26 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'app.luma.music'
+    compileSdk 36
+    defaultConfig { applicationId 'app.luma.music'; minSdk 26; targetSdk 35; versionCode 140; versionName '1.4.0'; testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner' }
+    signingConfigs {
+        release {
+            if (System.getenv('LUMA_KEYSTORE')) {
+                storeFile file(System.getenv('LUMA_KEYSTORE'))
+                storePassword System.getenv('LUMA_KEYSTORE_PASSWORD')
+                keyAlias 'luma'
+                keyPassword System.getenv('LUMA_KEYSTORE_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        release { minifyEnabled false; signingConfig signingConfigs.release }
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    testOptions { unitTests.returnDefaultValues = true }
+}
+dependencies {
+    implementation 'com.google.android.gms:play-services-auth:22.0.0'
+    implementation 'androidx.work:work-runtime:2.11.2'
+    testImplementation 'junit:junit:4.13.2'
+}

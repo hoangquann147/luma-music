@@ -1,0 +1,17 @@
+* text=auto eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.mjs text eol=lf
+*.java text eol=lf
+*.css text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.xml text eol=lf
+*.gradle text eol=lf
+gradlew text eol=lf
+*.bat text eol=crlf
+*.png binary
+*.ico binary
+*.jar binary
+desktop/resources/tools/licenses/** -text -whitespace
+desktop/build/launcher-licenses/** -text -whitespace

@@ -16,6 +16,7 @@ Dùng Windows x64, Node.js 24, PowerShell 7, Rust stable MSVC, Visual Studio C++
 ```powershell
 npm ci
 npm run tools:prepare
+npm run build
 npm run rust:test -- --release -- --test-threads=1
 npm run dist:win
 ./scripts/verify-installer.ps1 -Installer ./artifacts/Luma-Rust-1.0.0-x64-setup.exe

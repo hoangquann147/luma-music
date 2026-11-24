@@ -25,6 +25,7 @@ Cần Node.js >=22.12, Rust MSVC stable, MSVC Build Tools, Windows SDK, PowerShe
 cd desktop
 npm ci
 npm run tools:prepare
+npm run build
 npm run rust:test -- --release -- --test-threads=1
 npm run dist:win
 ```

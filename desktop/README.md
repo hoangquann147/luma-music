@@ -24,6 +24,7 @@ Cần Windows x64, Node.js >=22.12, Rust MSVC stable, MSVC Build Tools + Windows
 ```powershell
 npm ci
 npm run tools:prepare
+npm run build
 npm run rust:test -- --release -- --test-threads=1
 npm run dist:win
 ```

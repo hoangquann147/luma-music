@@ -36,6 +36,7 @@ jobs:
           rustup default stable
           npm ci
           npm run tools:prepare
+          npm run build
       - name: Test native backend
         run: npm run rust:test -- --release -- --test-threads=1
       - name: Build Windows installer

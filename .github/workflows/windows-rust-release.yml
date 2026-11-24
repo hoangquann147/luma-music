@@ -8,12 +8,12 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
-concurrency:
-  group: luma-rust-windows-release
-  cancel-in-progress: false
 jobs:
   release:
     if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release-rust-1.0.0]')
+    concurrency:
+      group: luma-rust-windows-release
+      cancel-in-progress: true
     runs-on: windows-2022
     timeout-minutes: 60
     defaults:

@@ -61,23 +61,23 @@ jobs:
           $PSNativeCommandUseErrorActionPreference=$false
           $tag='rust-v1.0.0'
           $installer='./artifacts/Luma-Rust-1.0.0-x64-setup.exe'
-          $existing=gh release view $tag --json isDraft,targetCommitish 2>$null
-          if($LASTEXITCODE -eq 0){
-            $existing=$existing | ConvertFrom-Json
-            if(!$existing.isDraft -or $existing.targetCommitish -ne $env:RELEASE_COMMIT){throw 'Release tag already exists for another published build; refusing to overwrite.'}
+          $existing=@(gh api "repos/$env:GH_REPO/releases?per_page=100" | ConvertFrom-Json) | Where-Object tag_name -eq $tag
+          if($LASTEXITCODE -ne 0){throw 'Cannot inspect existing releases'}
+          if($existing){
+            if(!$existing.draft -or $existing.target_commitish -ne $env:RELEASE_COMMIT){throw 'Release tag already exists for another published build; refusing to overwrite.'}
             gh release upload $tag $installer ./artifacts/SHA256SUMS.txt ./artifacts/INSTALLER-VERIFICATION.json --clobber
           }else{
             gh release create $tag $installer ./artifacts/SHA256SUMS.txt ./artifacts/INSTALLER-VERIFICATION.json --draft --target $env:RELEASE_COMMIT --title 'Luma Rust 1.0.0' --notes-file RELEASE-NOTES-1.0.0.md
           }
           if($LASTEXITCODE -ne 0){throw 'Release upload failed'}
-          $new=gh api "repos/$env:GH_REPO/releases/tags/$tag" | ConvertFrom-Json
-          if($LASTEXITCODE -ne 0){throw 'Cannot verify draft release'}
+          $new=@(gh api "repos/$env:GH_REPO/releases?per_page=100" | ConvertFrom-Json) | Where-Object tag_name -eq $tag
+          if($LASTEXITCODE -ne 0 -or !$new){throw 'Cannot verify draft release'}
           $asset=$new.assets | Where-Object name -eq 'Luma-Rust-1.0.0-x64-setup.exe'
           $expected='sha256:'+(Get-FileHash $installer).Hash.ToLowerInvariant()
           if(!$asset -or $asset.digest -ne $expected){throw 'Uploaded installer SHA-256 does not match the verified build'}
-          gh release edit $tag --draft=false --latest
+          gh api --method PATCH "repos/$env:GH_REPO/releases/$($new.id)" -F draft=false -f make_latest=true
           if($LASTEXITCODE -ne 0){throw 'Cannot publish the new verified release'}
-          $published=gh api "repos/$env:GH_REPO/releases/tags/$tag" | ConvertFrom-Json
+          $published=gh api "repos/$env:GH_REPO/releases/$($new.id)" | ConvertFrom-Json
           if($LASTEXITCODE -ne 0 -or $published.draft){throw 'New release is not published; preserving the old release'}
           $old=gh api "repos/$env:GH_REPO/releases/tags/desktop-v1.5.0" 2>$null
           if($LASTEXITCODE -eq 0){

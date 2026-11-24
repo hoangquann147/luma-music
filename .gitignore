@@ -72,3 +72,9 @@ desktop/resources/tools/*
 !desktop/resources/tools/manifest.json
 !desktop/resources/tools/THIRD-PARTY-NOTICES.md
 !desktop/resources/tools/licenses/
+
+# Native Rust builds and installer intermediates
+**/target/
+**/.build-tools/
+**/artifacts/
+**/*.protected.json

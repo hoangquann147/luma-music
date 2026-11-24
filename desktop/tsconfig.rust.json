@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src",
+    "shared",
+    "vite.web.config.ts",
+    "dev-csp.ts"
+  ],
+  "exclude": [
+    "electron",
+    "tests"
+  ]
+}

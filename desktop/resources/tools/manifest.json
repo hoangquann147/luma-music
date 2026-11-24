@@ -8,10 +8,10 @@
   },
   {
     "repo": "BtbN/FFmpeg-Builds",
-    "version": "latest",
-    "asset": "ffmpeg-n9.0-latest-win64-lgpl-shared-9.0.zip",
-    "url": "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n9.0-latest-win64-lgpl-shared-9.0.zip",
-    "sha256": "f589c0796890c197d31e7cd221c080ffd0fe09362301329743a50140a10dbe86"
+    "version": "autobuild-2026-11-22-12-36",
+    "asset": "ffmpeg-n9.0.2-61-gd59078794d-win64-lgpl-shared-9.0.zip",
+    "url": "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-11-22-12-36/ffmpeg-n9.0.2-61-gd59078794d-win64-lgpl-shared-9.0.zip",
+    "sha256": "54f91e995868b0ebe28673ab93bab7299ccd15ef07135ca69446b5972f32d8d1"
   },
   {
     "repo": "denoland/deno",

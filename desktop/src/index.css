@@ -1,0 +1,14 @@
+/* Native controls never select labels while clicking or dragging. */
+html,
+body,
+body * {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+
+/* Search, URLs and editable settings retain normal text selection and copy. */
+body input,
+body textarea {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}

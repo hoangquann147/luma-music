@@ -15,3 +15,8 @@ gradlew text eol=lf
 *.jar binary
 desktop/resources/tools/licenses/** -text -whitespace
 desktop/build/launcher-licenses/** -text -whitespace
+
+*.rs text eol=lf
+*.nsi text eol=lf
+*.ps1 text eol=lf
+*.ttf binary

@@ -1,57 +1,36 @@
-# Luma
+# Luma Rust 1.0.0
 
-Ứng dụng nghe nhạc trên Windows và Android, với mã nguồn riêng cho từng nền tảng.
+Luma PC dùng **Rust/Tauri + React**, phát hành dưới dạng bộ cài Windows x64. Phiên bản 1.0.0 là mốc phát hành cho nhánh Rust, thay release Electron portable trước đây.
+
+## Tải và cài
+
+Tải `Luma-Rust-1.0.0-x64-setup.exe` tại [Releases](https://github.com/hoangquann147/luma-music/releases/latest), chạy bộ cài và mở Luma từ Start Menu. Có tùy chọn shortcut Desktop, mục gỡ cài đặt và kiểm tra WebView2. Không cần cài Node.js, Rust hay công cụ tải nhạc riêng để sử dụng app.
+
+Cài/gỡ giữ thư viện và cấu hình trong `%APPDATA%\Luma-Rust`, không xóa nhạc nguồn. Xem [hướng dẫn Windows](desktop/README.md) và [ghi chú 1.0.0](desktop/RELEASE-NOTES-1.0.0.md).
+
+## Mã nguồn
 
 | Thư mục | Nội dung |
 | --- | --- |
-| [desktop/](desktop/) | Electron, React, TypeScript, Tailwind CSS; FLAC/M4A, album, EQ, playlist Spotify, tải và chuyển đổi âm thanh, Google Drive |
-| [android/](android/) | Java, Android; FLAC offline, phát nền, PCM, PEQ và Google Drive |
+| [desktop/](desktop/) | Luma Rust Windows: WASAPI, thư viện/album, EQ/Crossfade/Automix, Google Drive, Discord Rich Presence và bộ cài NSIS |
+| [android/](android/) | Mã Android có sẵn được giữ nguyên; không thuộc lần phát hành PC này |
 
-## Windows
+Các file Electron cũ được giữ để tham khảo lịch sử; backend PC hiện hành là Rust trong `desktop/src-tauri/`.
 
-Cần Windows 64-bit, Node.js >= 22.12 và npm.
+## Build Windows
+
+Cần Node.js >=22.12, Rust MSVC stable, MSVC Build Tools, Windows SDK, PowerShell 7 và tar.exe:
 
 ```powershell
 cd desktop
 npm ci
-npm run tools:fetch
-npm run dev
-```
-
-`tools:fetch` tải yt-dlp, FFmpeg/ffprobe và Deno từ nguồn chính thức, kiểm tra SHA-256 theo manifest. Công cụ không nằm trong Git. Nếu checksum không khớp do upstream thay đổi, lệnh sẽ dừng; xem [hướng dẫn desktop](desktop/README.md) trước khi cập nhật manifest.
-
-```powershell
-npm run typecheck
-npm test
-npm run build
+npm run tools:prepare
+npm run rust:test -- --release -- --test-threads=1
 npm run dist:win
 ```
 
-File Windows được tạo trong `desktop/release/`. Kiểm thử M4A thực cần FFmpeg và ffprobe; khi không có FFmpeg, nhóm kiểm thử này sẽ được bỏ qua. Nếu dùng bộ công cụ bên ngoài thay vì `tools:fetch`, đặt `FFMPEG_TEST_PATH` và `FFPROBE_PATH` tới hai executable tương ứng trước khi chạy kiểm thử.
+Bộ cài được tạo ở `desktop/artifacts/`. Công cụ đi kèm được kiểm tra checksum; NSIS được ghim phiên bản và bootstrapper WebView2 được kiểm tra chữ ký Microsoft. Mã nguồn không chứa nhạc, token, Client Secret hay khóa ký.
 
-## Android
+Google Drive/Spotify cần cấu hình OAuth riêng. Discord Rich Presence cần Application ID riêng. Chuyển nguồn YouTube lossy sang FLAC không biến thành lossless gốc. Rich Presence chưa tự tìm ảnh bìa trên mạng.
 
-Cần JDK 17, Android SDK platform 36 và build-tools 36.0.0. Cấu hình `ANDROID_HOME` trên máy build hoặc `android/local.properties` riêng, rồi chạy:
-
-```powershell
-cd android
-.\gradlew.bat :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
-```
-
-APK debug nằm trong `android/app/build/outputs/apk/debug/`. Xem [hướng dẫn Android](android/README.md) để build release bằng khóa ký riêng.
-
-USB bit-perfect dùng API Android 14+ và cần thiết bị/DAC công bố hỗ trợ. Đây không phải driver USB riêng của HiBy. Bản PC dùng bộ trộn âm thanh của hệ điều hành.
-
-## Tài khoản và dữ liệu
-
-- Nhạc local hoạt động không cần đăng nhập. Kho mã nguồn không chứa nhạc, dữ liệu thư viện hay token tài khoản.
-- Nhập playlist Spotify cần cấu hình ứng dụng Spotify của bạn trong Settings. Xem [hướng dẫn desktop](desktop/README.md).
-- Đồng bộ Drive cần hai OAuth clients Desktop/Android trong cùng dự án Google Cloud. Xem [thiết lập Google Drive](desktop/GOOGLE-DRIVE-SETUP.md).
-- Nhận diện album ở PC dựa vào tag trong file; cũng có thể tạo album và thêm bài thủ công. Thư viện chung có thư mục con cho từng album.
-- Chuyển nguồn nén mất dữ liệu sang FLAC không khôi phục chất lượng đã mất. Chỉ tải nội dung mà bạn được phép tải.
-
-## Đưa lên GitHub
-
-Xem [PUSH-TO-GITHUB.md](PUSH-TO-GITHUB.md). Chỉ push repository này; các bản build, khóa ký và cấu hình riêng được giữ ngoài Git. Có thể đính kèm EXE/APK trên GitHub Releases riêng khi cần phân phối.
-
-Mã dự án theo [MIT License](LICENSE). Công cụ đi kèm có giấy phép riêng tại [THIRD-PARTY-NOTICES](desktop/THIRD-PARTY-NOTICES.md).
+Giấy phép dự án: [MIT](LICENSE). Công cụ có [giấy phép riêng](desktop/THIRD-PARTY-NOTICES.md).

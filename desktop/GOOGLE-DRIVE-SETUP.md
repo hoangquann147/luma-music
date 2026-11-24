@@ -4,7 +4,7 @@ Hướng dẫn cấu hình dịch vụ cho bản desktop và Android tự build 
 
 ## 1. Chuẩn bị ứng dụng
 
-- Build desktop theo [README](README.md) và Android theo [hướng dẫn Android](../android/README.md).
+- Build desktop theo [README](README.md) và Android ARM64 theo [hướng dẫn Luma Mobile](../mobile/README-ANDROID.md).
 - Android hỗ trợ Android 8.0 trở lên; dùng đúng chứng chỉ ký của APK sẽ cài khi đăng ký OAuth.
 - Tải YouTube, nhập playlist Spotify và chuyển đổi được thực hiện trên PC. Android nhận file FLAC hoàn chỉnh, không chạy FFmpeg hoặc công cụ Windows.
 
@@ -28,25 +28,23 @@ Trong **Google Auth Platform → Clients → Create client**:
 
 ## 4. Tạo OAuth client Android
 
-Chọn loại **Android** trong cùng project. Package mặc định của nguồn:
+Chọn loại **Android** trong cùng project. Package của Luma Mobile:
 
 ```text
-app.luma.music
+app.luma.mobile
 ```
 
-Lấy SHA-1 của chứng chỉ ký bằng terminal ở thư mục `android/`:
+APK Luma Mobile 3.0.2 đang ký bằng chứng chỉ phát triển cục bộ có SHA-1:
+
+```text
+45:FE:92:59:97:D4:A8:5B:8C:83:E3:05:A8:5E:08:DE:E1:61:CD:27
+```
+
+Nếu ký APK bằng khóa khác, đăng ký SHA-1 của khóa đó. Có thể đọc chứng chỉ trực tiếp từ APK:
 
 ```powershell
-.\gradlew.bat :app:signingReport
+keytool -printcert -jarfile Luma-Mobile-3.0.2-arm64.apk
 ```
-
-Với bản debug, dùng SHA-1 của variant debug. Với bản release, cấu hình `LUMA_KEYSTORE` và `LUMA_KEYSTORE_PASSWORD` theo hướng dẫn Android trước khi chạy report, rồi dùng SHA-1 của variant release. Cũng có thể đọc chứng chỉ trực tiếp từ keystore riêng:
-
-```powershell
-keytool -list -v -keystore "C:\Private\luma-release.p12" -alias luma
-```
-
-Lệnh `keytool` hỏi mật khẩu tại terminal; không đưa mật khẩu vào dòng lệnh, chat hoặc repository. Đường dẫn trên là ví dụ, thay bằng keystore của bạn. Đăng ký thêm client cho chứng chỉ debug nếu cần chạy cả debug và release; đổi khóa ký cũng đổi SHA-1 cần đăng ký.
 
 Điền package và SHA-1 vào Android OAuth client rồi lưu. Google nhận diện ứng dụng theo package / chứng chỉ; không dán Desktop Client Secret vào Android. Xem [Google authorization trên Android](https://developer.android.com/identity/authorization).
 
@@ -56,7 +54,7 @@ Hai OAuth clients cần thuộc cùng dự án Google Cloud. Dùng cùng một t
 
 1. PC: **Settings → Đồng bộ Google Drive → Kết nối Google**, tự đăng nhập và cấp quyền trong trình duyệt.
 2. Chọn **Đồng bộ ngay**. Luma quét FLAC trong thư mục nguồn và các thư mục con, tạo thư mục **Luma Music** trên Drive rồi upload. Nên chọn đúng thư mục thư viện chung để tránh quét cả file gốc và bản sao album.
-3. Android: **Drive → Kết nối Google Drive**, chọn cùng tài khoản và cấp quyền.
+3. Android: **Settings → Đồng bộ máy tính → Kết nối Google**, dùng cùng tài khoản và cấp quyền.
 4. Nhấn **Đồng bộ ngay** trên Android. File đã tải hoàn chỉnh xuất hiện trong **Thư viện** và phát offline.
 5. Bật **Tự động đồng bộ** nếu cần. PC kiểm tra mỗi 2 phút khi ứng dụng đang mở; Android dùng lịch nền định kỳ 15 phút, chịu ràng buộc mạng, pin và hệ điều hành.
 

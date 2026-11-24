@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ArrowDown, ArrowDownToLine, ArrowRight, AudioLines, Check, CheckCircle2, ChevronRight, Disc3, DiscAlbum, Download, ExternalLink, Folder, FolderOpen, Headphones, Home, LibraryBig, ListMusic, LoaderCircle, Music2, Play, Plus, Search, Settings2, ShieldCheck, SlidersHorizontal, Trash2, Upload, X } from 'lucide-react';
+import { ArrowDown, ArrowDownToLine, ArrowRight, AudioLines, Check, CheckCircle2, ChevronRight, Disc3, DiscAlbum, Download, ExternalLink, Folder, FolderOpen, Headphones, Home, LibraryBig, ListMusic, LoaderCircle, Moon, Music2, Play, Plus, Search, Settings2, ShieldCheck, SlidersHorizontal, Sun, Trash2, Upload, X } from 'lucide-react';
+import { useTheme } from './hooks/useTheme';
 import type { BootstrapData, DownloadJob, PlaylistBatch, Settings, SpotifyAuthStatus, SpotifyMatch, SpotifyPlaylist, ToolStatus, Track, UserProfile } from '../shared/types';
 import Player, { Artwork, time } from './components/Player';
 import { usePlayer } from './hooks/usePlayer';
@@ -19,6 +20,7 @@ const mergeTracks = (current: Track[], incoming: Track[]) => [...new Map([...cur
 const mergeById = <T extends { id: string }>(current: T[], incoming: T[]) => [...new Map([...current, ...incoming].map(item => [item.id, item])).values()];
 
 export default function App() {
+  const {theme,toggleTheme}=useTheme();
   const [tab, setTab] = useState<Tab>('home');
   const [settingsNavigation, setSettingsNavigation] = useState<{ category: SettingsCategory; request: number }>({ category: 'profile', request: 0 });
   const openEqualizer = () => { setSettingsNavigation(value => ({ category: 'equalizer', request: value.request + 1 })); setTab('settings'); };
@@ -37,11 +39,12 @@ export default function App() {
   const [loading, setLoading] = useState(Boolean(window.music));
   const [importing, setImporting] = useState(false);
   const [message, setMessage] = useState<{ text: string; kind: 'error' | 'success' } | null>(null);
-  const [queueOpen, setQueueOpen] = useState(false);
+  const [queueOpen, setQueueOpen] = useState(()=>{try{return localStorage.getItem('luma.queueOpen')!=='false'}catch{return true}});
+  useEffect(()=>{try{localStorage.setItem('luma.queueOpen',String(queueOpen))}catch{/* Keep the panel usable without storage. */}},[queueOpen]);
   const fail = useCallback((text: string) => setMessage({ text, kind: 'error' }), []);
   const success = useCallback((text: string) => setMessage({ text, kind: 'success' }), []);
   const player = usePlayer(tracks, fail);
-  const requireDesktop = () => { if (!window.music) { fail('Mở ứng dụng bằng Electron để truy cập file và công cụ tải nhạc.'); return false; } return true; };
+  const requireDesktop = () => { if (!window.music) { fail('Mở ứng dụng Luma trên máy để truy cập file và công cụ tải nhạc.'); return false; } return true; };
   useEffect(() => {
     if (!window.music) return;
     let active = true;
@@ -85,11 +88,11 @@ export default function App() {
   const [playlistFilter, setPlaylistFilter] = useState('');
   const playlistTrackIds = playlistFilter ? new Set(playlists.find(item => item.id === playlistFilter)?.tracks.map(entry => entry.localTrackId).filter(Boolean)) : null;
   const filteredTracks = tracks.filter(track => (!playlistTrackIds || playlistTrackIds.has(track.id)) && `${track.title} ${track.artist} ${track.album}`.toLocaleLowerCase().includes(query.toLocaleLowerCase()));
-  return <div className="app-shell">
+  return <div className={`app-shell ${queueOpen?'queue-visible':''}`}>
     <aside className="sidebar" aria-label="Điều hướng chính">
-      <div className="brand-mark" title="Luma"><AudioLines size={21} strokeWidth={1.8} /></div>
+      <div className="brand-lockup"><div className="brand-mark" title="Luma"><AudioLines size={22} strokeWidth={1.8} /></div><div className="brand-wordmark"><strong>luma<span>.</span></strong><small>YOUR MUSIC, CLOSER.</small></div></div>
       <nav>{([{ id: 'home', icon: Home }, { id: 'library', icon: LibraryBig }, { id: 'albums', icon: DiscAlbum }, { id: 'playlists', icon: ListMusic }, { id: 'downloader', icon: Download }] as const).map(({ id, icon: Icon }) => <button key={id} className={`nav-item ${tab === id ? 'active' : ''}`} aria-current={tab === id ? 'page' : undefined} onClick={() => setTab(id)}><span className="nav-icon"><Icon size={22} strokeWidth={1.8} /></span><span>{names[id]}</span>{id === 'downloader' && jobs.some(job => !terminal(job)) && <i className="activity-dot" />}</button>)}</nav>
-      <div className="sidebar-bottom"><span className="sidebar-version">LUMA</span><button className={`nav-item ${tab === 'settings' ? 'active' : ''}`} aria-current={tab === 'settings' ? 'page' : undefined} onClick={() => setTab('settings')}><span className="nav-icon"><Settings2 size={22} strokeWidth={1.8} /></span><span>Settings</span></button></div>
+      <div className="sidebar-bottom"><div className="sidebar-listening"><span className="status-dot"/><span>Made for listening.</span></div><button className="nav-item theme-toggle" aria-label="Đổi giao diện sáng tối" title={theme==='dark'?'Chuyển sang giao diện sáng':'Chuyển sang giao diện tối'} onClick={toggleTheme}><span className="nav-icon">{theme==='dark'?<Sun size={20}/>:<Moon size={20}/>}</span><span>{theme==='dark'?'Giao diện sáng':'Giao diện tối'}</span></button><button className={`nav-item ${tab === 'settings' ? 'active' : ''}`} aria-current={tab === 'settings' ? 'page' : undefined} onClick={() => setTab('settings')}><span className="nav-icon"><Settings2 size={22} strokeWidth={1.8} /></span><span>Settings</span></button></div>
     </aside>
     <main className={`main-view ${tab === 'settings' ? 'settings-mode' : ''}`}>
       {tab !== 'settings' && <header className="page-header"><div><div className="breadcrumb">YOUR PERSONAL SOUNDSPACE</div><h1>{names[tab]}</h1></div><div className="header-right"><span className="quality-pill"><span /> LOCAL FIRST</span><div className="header-avatar" title={profile.name || 'Hồ sơ của bạn'}>{profile.avatarDataUrl ? <img src={profile.avatarDataUrl} alt={profile.name ? `Ảnh hồ sơ ${profile.name}` : 'Ảnh hồ sơ'} /> : <Headphones size={19} />}</div></div></header>}

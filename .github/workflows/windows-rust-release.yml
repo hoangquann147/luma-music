@@ -1,0 +1,89 @@
+name: Luma Rust Windows release
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'desktop/**'
+      - '.github/workflows/windows-rust-release.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: luma-rust-windows-release
+  cancel-in-progress: false
+jobs:
+  release:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release-rust-1.0.0]')
+    runs-on: windows-2022
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: desktop
+    env:
+      CARGO_TERM_COLOR: never
+      RUST_TEST_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: Prepare build tools and dependencies
+        run: |
+          rustup update stable --no-self-update
+          rustup default stable
+          npm ci
+          npm run tools:prepare
+      - name: Test native backend
+        run: npm run rust:test -- --release -- --test-threads=1
+      - name: Build Windows installer
+        run: npm run dist:win
+      - name: Verify installation, bundled tools and uninstall
+        run: ./scripts/verify-installer.ps1 -Installer ./artifacts/Luma-Rust-1.0.0-x64-setup.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Luma-Rust-1.0.0-Windows
+          path: |
+            desktop/artifacts/*-setup.exe
+            desktop/artifacts/SHA256SUMS.txt
+            desktop/artifacts/INSTALLER-VERIFICATION.json
+          if-no-files-found: error
+      - name: Publish verified Rust release and remove original portable release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_COMMIT: ${{ github.sha }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $PSNativeCommandUseErrorActionPreference=$false
+          $tag='rust-v1.0.0'
+          $installer='./artifacts/Luma-Rust-1.0.0-x64-setup.exe'
+          $existing=gh release view $tag --json isDraft,targetCommitish 2>$null
+          if($LASTEXITCODE -eq 0){
+            $existing=$existing | ConvertFrom-Json
+            if(!$existing.isDraft -or $existing.targetCommitish -ne $env:RELEASE_COMMIT){throw 'Release tag already exists for another published build; refusing to overwrite.'}
+            gh release upload $tag $installer ./artifacts/SHA256SUMS.txt ./artifacts/INSTALLER-VERIFICATION.json --clobber
+          }else{
+            gh release create $tag $installer ./artifacts/SHA256SUMS.txt ./artifacts/INSTALLER-VERIFICATION.json --draft --target $env:RELEASE_COMMIT --title 'Luma Rust 1.0.0' --notes-file RELEASE-NOTES-1.0.0.md
+          }
+          if($LASTEXITCODE -ne 0){throw 'Release upload failed'}
+          $new=gh api "repos/$env:GH_REPO/releases/tags/$tag" | ConvertFrom-Json
+          if($LASTEXITCODE -ne 0){throw 'Cannot verify draft release'}
+          $asset=$new.assets | Where-Object name -eq 'Luma-Rust-1.0.0-x64-setup.exe'
+          $expected='sha256:'+(Get-FileHash $installer).Hash.ToLowerInvariant()
+          if(!$asset -or $asset.digest -ne $expected){throw 'Uploaded installer SHA-256 does not match the verified build'}
+          gh release edit $tag --draft=false --latest
+          if($LASTEXITCODE -ne 0){throw 'Cannot publish the new verified release'}
+          $published=gh api "repos/$env:GH_REPO/releases/tags/$tag" | ConvertFrom-Json
+          if($LASTEXITCODE -ne 0 -or $published.draft){throw 'New release is not published; preserving the old release'}
+          $old=gh api "repos/$env:GH_REPO/releases/tags/desktop-v1.5.0" 2>$null
+          if($LASTEXITCODE -eq 0){
+            $old=$old | ConvertFrom-Json
+            if($old.id -ne 433844286 -or $old.tag_name -ne 'desktop-v1.5.0'){throw 'Unexpected old release identity; refusing to delete'}
+            gh api --method DELETE "repos/$env:GH_REPO/releases/433844286"
+            if($LASTEXITCODE -ne 0){throw 'New release is published, but deleting the original release failed'}
+          }
+          Write-Output "Published $($published.html_url). Old portable release removed if present; Git tags/history preserved."
+          exit 0

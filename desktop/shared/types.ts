@@ -26,7 +26,15 @@ export interface Track {
   originalPath?: string;
   managed?: boolean;
 }
+export interface DiscordStatus { connected: boolean; message: string; activity?: { details?: string; state?: string } | null; }
 export interface Settings {
+  discordEnabled?: boolean;
+  discordApplicationId?: string;
+  discordShowQuality?: boolean;
+  minimizeToTray?: boolean;
+  crossfadeSeconds?: number;
+  automix?: boolean;
+  exclusiveMode?: boolean;
   libraryDirectory?: string;
   downloadDirectory: string;
   ytDlpPath: string;
@@ -36,6 +44,13 @@ export interface Settings {
   spotifyMarket: string;
 }
 export interface SettingsUpdate {
+  discordEnabled?: boolean;
+  discordApplicationId?: string;
+  discordShowQuality?: boolean;
+  minimizeToTray?: boolean;
+  crossfadeSeconds?: number;
+  automix?: boolean;
+  exclusiveMode?: boolean;
   libraryDirectory?: string;
   downloadDirectory?: string;
   ytDlpPath?: string;
@@ -139,7 +154,39 @@ export interface BootstrapData {
   profile: UserProfile;
   albums?: Album[];
 }
+export interface NativePlaybackState {
+  shuffle: boolean;
+  repeatMode: 'off' | 'all' | 'one';
+  trackId?: string | null;
+  playing: boolean;
+  position: number;
+  duration: number;
+  volume: number;
+  queueIds: string[];
+  requestedMode: 'shared' | 'exclusive';
+  outputMode: 'shared' | 'exclusive';
+  bitPerfect: boolean;
+  sampleRate: number;
+  bitsPerSample: number;
+  channels: number;
+  crossfading: boolean;
+  error?: string | null;
+  notice?: string | null;
+}
+export type NativePlaybackCommand =
+  | { op: 'shuffle'; enabled: boolean }
+  | { op: 'repeat'; mode: 'off' | 'all' | 'one' }
+  | { op: 'play'; trackId: string; queueIds?: string[] }
+  | { op: 'setQueue'; queueIds: string[] }
+  | { op: 'pause' | 'resume' | 'toggle' | 'next' | 'previous' | 'configure' }
+  | { op: 'seek'; position: number }
+  | { op: 'volume'; volume: number }
+  | { op: 'equalizer'; settings: { enabled: boolean; preampDb: number; autoHeadroom: boolean; gains: number[] } };
 export interface MusicAPI {
+  discordStatus(): Promise<DiscordStatus>;
+  audioCommand(input: NativePlaybackCommand): Promise<NativePlaybackState>;
+  audioState(): Promise<NativePlaybackState>;
+  onPlaybackState(listener: (state: NativePlaybackState) => void): () => void;
   bootstrap(): Promise<BootstrapData>;
   importFiles(): Promise<Track[]>;
   getAlbums(): Promise<Album[]>;
@@ -180,4 +227,4 @@ export interface MusicAPI {
   cancelDriveSync(): Promise<DriveStatus>;
   onDriveStatus(listener: (status: DriveStatus) => void): () => void;
 }
-export const mediaUrl = (id: string) => `luma-media://track/${encodeURIComponent(id)}`;
+export const mediaUrl = (id: string) => `${window.__LUMA_MEDIA_BASE__ || ''}/track/${encodeURIComponent(id)}`;

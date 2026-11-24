@@ -9,6 +9,8 @@ const gainLabel = (db: number) => `${db > 0 ? '+' : ''}${db.toFixed(1)}`;
 
 export default function EqualizerPanel({ player }: { player: PlayerState }) {
   const { equalizer, setEqualizer, resetEqualizer } = player;
+  const exclusive = player.nativeState?.outputMode === 'exclusive';
+  const applied = equalizer.enabled && !exclusive;
   const selectedPreset = EQ_PRESETS.find(preset => preset.gains.every((gain, index) => Math.abs(gain - equalizer.gains[index]) < .01)
     && Math.abs((preset.preampDb ?? 0) - equalizer.preampDb) < .01)?.id ?? 'custom';
   const curve = useMemo(() => Array.from({ length: 241 }, (_, index) => {
@@ -24,16 +26,16 @@ export default function EqualizerPanel({ player }: { player: PlayerState }) {
     if (preset) setEqualizer({ enabled: true, gains: [...preset.gains], preampDb: preset.preampDb ?? 0 });
   };
 
-  return <div className={`equalizer-panel ${equalizer.enabled ? 'equalizer-enabled' : ''}`}>
+  return <div className={`equalizer-panel ${applied ? 'equalizer-enabled' : ''}`}>
     <section className="equalizer-card">
       <div className="equalizer-heading">
         <span className="equalizer-heading-icon"><SlidersHorizontal size={22} strokeWidth={1.65} /></span>
-        <div><h3>Âm thanh, đúng gu bạn.</h3><p>10 dải tần · thay đổi trực tiếp khi đang nghe.</p></div>
+        <div><h3>Âm thanh, đúng gu bạn.</h3><p>{exclusive ? 'Exclusive đang bỏ qua EQ. Các chỉnh sửa được giữ để dùng trong Shared.' : '10 dải tần · thay đổi trực tiếp khi đang nghe.'}</p></div>
         <button type="button" role="switch" aria-label="Bật Equalizer" aria-checked={equalizer.enabled} className="equalizer-switch" onClick={() => setEqualizer({ enabled: !equalizer.enabled })}><span /></button>
       </div>
       <div className="equalizer-toolbar">
         <label className="equalizer-preset"><span>PRESET</span><select aria-label="Preset Equalizer" value={selectedPreset} onChange={event => applyPreset(event.target.value)}><option value="custom" disabled>Tùy chỉnh</option>{EQ_PRESETS.map(preset => <option value={preset.id} key={preset.id}>{preset.name}</option>)}</select></label>
-        <span className={`equalizer-pill ${equalizer.enabled ? 'is-active' : ''}`}><i />{equalizer.enabled ? 'Đang áp dụng' : 'Đang bỏ qua'}</span>
+        <span className={`equalizer-pill ${applied ? 'is-active' : ''}`}><i />{exclusive ? 'Bypass · Exclusive' : applied ? 'Đang áp dụng' : 'Đang bỏ qua'}</span>
         <button type="button" className="equalizer-reset" onClick={resetEqualizer}><RotateCcw size={13} /> Đặt lại</button>
       </div>
 
@@ -66,9 +68,9 @@ export default function EqualizerPanel({ player }: { player: PlayerState }) {
       <div className="equalizer-section-title"><AudioLines size={19} strokeWidth={1.7} /><div><h3>Mức tín hiệu</h3><p>Giữ khoảng trống cho những dải bạn tăng.</p></div></div>
       <label className="equalizer-preamp"><span>Preamp</span><input className="slider" aria-label="Preamp Equalizer" type="range" min="-24" max="0" step="0.5" value={equalizer.preampDb} style={{ '--fill': `${(equalizer.preampDb + 24) / 24 * 100}%` } as CSSProperties} onChange={event => setEqualizer({ preampDb: Number(event.target.value) })} /><output>{gainLabel(equalizer.preampDb)} dB</output></label>
       <label className="equalizer-headroom"><input type="checkbox" checked={equalizer.autoHeadroom} onChange={event => setEqualizer({ autoHeadroom: event.target.checked })} /><span><strong>Tự tạo headroom</strong><small>Giảm mức theo đáp tuyến khi tăng EQ. Headroom giúp hạn chế clipping; đây không phải limiter.</small></span></label>
-      <div className="equalizer-effective"><ShieldCheck size={14} /><span>Mức preamp áp dụng {equalizer.enabled ? '' : 'khi bỏ qua'}<strong>{gainLabel(player.effectivePreampDb)} dB</strong></span></div>
+      <div className="equalizer-effective"><ShieldCheck size={14} /><span>Mức preamp áp dụng {applied ? '' : 'khi bỏ qua'}<strong>{gainLabel(player.effectivePreampDb)} dB</strong></span></div>
     </section>
-    <div className="equalizer-status"><Check size={14} /><p><strong>Tự lưu trên máy.</strong> Các thay đổi chỉ tác động nhạc phát trong Luma, áp dụng cho cả FLAC và M4A.</p></div>
+    <div className="equalizer-status"><Check size={14} /><p><strong>Tự lưu trên máy.</strong> Các thay đổi áp dụng cho FLAC và M4A trong Shared Mode; Exclusive giữ tín hiệu gốc.</p></div>
     {player.eqStatus && <p className="equalizer-engine-status" role="status">{player.eqStatus}</p>}
   </div>;
 }

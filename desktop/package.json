@@ -1,108 +1,40 @@
 {
   "name": "luma",
-  "version": "1.5.0",
-  "description": "Your FLAC and M4A albums, organized in one local music library with a live equalizer.",
+  "version": "1.0.0",
+  "description": "Luma Rust native music player for Windows",
   "private": true,
   "type": "module",
-  "main": "dist-electron/main/index.js",
   "author": "Luma contributors",
   "license": "MIT",
   "engines": {
     "node": ">=22.12.0"
   },
   "scripts": {
-    "dev": "electron-vite dev",
-    "build": "tsc --noEmit && electron-vite build",
-    "preview": "electron-vite preview",
-    "dev:web": "vite --config vite.web.config.ts --host 127.0.0.1",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "dist:win": "tsc --noEmit && electron-vite build && electron-builder --win portable --x64",
-    "pack": "tsc --noEmit && electron-vite build && electron-builder --dir",
-    "dist:setup": "tsc --noEmit && electron-vite build && electron-builder --win nsis --x64",
-    "tools:fetch": "node scripts/fetch-tools.mjs"
+    "dev": "vite --config vite.web.config.ts --host 127.0.0.1",
+    "build": "tsc --noEmit --project tsconfig.rust.json && vite build --config vite.web.config.ts",
+    "typecheck": "tsc --noEmit --project tsconfig.rust.json",
+    "rust:build": "cargo build --manifest-path src-tauri/Cargo.toml --release",
+    "rust:test": "cargo test --manifest-path src-tauri/Cargo.toml",
+    "rust:package": "npm run build && npm run rust:build && node scripts/package-rust.mjs .build-tools/installer-payload",
+    "tools:fetch": "node scripts/fetch-tools.mjs",
+    "tools:prepare": "node scripts/prepare-rust-tools.mjs",
+    "dist:win": "npm run rust:package && node scripts/build-installer.mjs"
   },
   "dependencies": {
-    "dotenv": "18.0.9",
-    "fluent-ffmpeg": "2.1.3",
+    "@tauri-apps/api": "^2.0.0",
     "lucide-react": "1.66.0",
-    "music-metadata": "12.3.3",
     "react": "19.3.1",
     "react-dom": "19.3.1"
   },
   "devDependencies": {
     "@tailwindcss/vite": "4.3.3",
-    "@types/fluent-ffmpeg": "^2.1.28",
     "@types/node": "^24.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "6.1.2",
-    "electron": "45.2.1",
-    "electron-builder": "26.18.0",
-    "electron-vite": "6.0.0",
     "tailwindcss": "4.3.3",
     "typescript": "5.9.3",
     "vite": "8.3.5",
     "vitest": "5.0.5"
-  },
-  "build": {
-    "appId": "app.luma.desktop",
-    "productName": "Luma",
-    "asar": true,
-    "directories": {
-      "output": "release",
-      "buildResources": "build"
-    },
-    "files": [
-      "dist/**/*",
-      "dist-electron/**/*",
-      "package.json"
-    ],
-    "win": {
-      "target": [
-        {
-          "target": "portable",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
-      "icon": "build/icon.ico",
-      "requestedExecutionLevel": "asInvoker"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
-    },
-    "mac": {
-      "category": "public.app-category.music",
-      "target": "dmg"
-    },
-    "linux": {
-      "category": "AudioVideo",
-      "target": "AppImage"
-    },
-    "executableName": "Luma",
-    "npmRebuild": false,
-    "extraResources": [
-      {
-        "from": "resources/tools",
-        "to": "tools",
-        "filter": [
-          "**/*",
-          "!ffmpeg-distribution/include/**",
-          "!ffmpeg-distribution/lib/**"
-        ]
-      },
-      {
-        "from": "THIRD-PARTY-NOTICES.md",
-        "to": "THIRD-PARTY-NOTICES.md"
-      }
-    ],
-    "portable": {
-      "artifactName": "Luma-Portable.exe",
-      "requestExecutionLevel": "user",
-      "unpackDirName": "luma-portable-1.5.0"
-    }
   }
 }
